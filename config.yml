@@ -1,0 +1,3 @@
+mongo:
+  database: myFirstDatabase
+  url: mongodb+srv://tempUser:faheem@cluster0.nw2hf.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
