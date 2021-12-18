@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/badgerRabbitmq"
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/services"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/database"
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/structure"
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/syslog"
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/api"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/go-co-op/gocron"
 	"github.com/spf13/cobra"
@@ -25,7 +25,6 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		database.ConnectMongo()
 		batchID := database.MongoClient.GetLastBatchID()
-		//fmt.Println(batchID)
 		//all related code here
 		db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
 		if err != nil {
@@ -36,16 +35,16 @@ var serveCmd = &cobra.Command{
 		//batchID := 
 		//db.collection("ug").find({}, {limit: 1}).sort({$natural: -1})
 		//db.Collection.find().limit(1).sort({$natural:-1})
-		wb := db.NewWriteBatch()
-		defer wb.Cancel()
-		var studList []Structure.Student
+		// wb := db.NewWriteBatch()
+		// defer wb.Cancel()
+		var studList []Models.Student
 		s := gocron.NewScheduler(time.UTC)
 		flag := false
 		s.Every(30).Seconds().Do(func() {
 			if !flag {
 				flag = true
 			} else {
-				studList = badgerRabbitmq.GetFromBadger(db, batchID)
+				studList = database.GetFromBadger(db, batchID)
 				//fmt.Println(studList)
 				database.MongoClient.BulkWriteInStudents(studList, db, batchID)
 				batchID = database.MongoClient.GetLastBatchID()
@@ -54,8 +53,8 @@ var serveCmd = &cobra.Command{
 		})
 		
 		s.StartAsync()
-		go syslog.GetSyslog()
-		badgerRabbitmq.GetFromRabbitMQ(db)
+		go API.GetSyslog()
+		Services.GetFromRabbitMQ(db)
 		//syslog.GetSyslog()
 		s.StartBlocking()
 		

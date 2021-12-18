@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	//"time"
 
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/badgerRabbitmq"
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/structure"
+	//"github.com/Academics-and-Career-Council/Stargazer.git/internal/badgerRabbitmq"
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	//"go.mongodb.org/mongo-driver/x/bsonx"
 
 	//"golang.org/x/net/internal/timeseries"
 	"github.com/dgraph-io/badger/v3"
@@ -38,7 +40,17 @@ func connect(url string, dbname string) *mongo.Database {
 		log.Fatalf("Unable to Connect to MongoDB %v", err)
 	}
 	log.Printf("Connected to MongoDB! URL : %s", url)
+
+
 	database := client.Database(dbname)
+	// index := mongo.IndexModel{
+	// 	Keys:    bsonx.Doc{{Key: "created_at", Value: bsonx.Int32(1)}},
+	// 	Options: options.Index().SetExpireAfterSeconds(int32(time.Now().Add(time.Second * 90).Unix())), // Will be removed after 24 Hours.
+	// }
+	// _, err = database.Collection("ug").Indexes().CreateOne(context.Background(), index )
+	// if err != nil {
+	// 	panic(err)
+	// } 
 	
 	// database.CreateCollection(context.TODO(), "ug", {
 	// 	timeseries: {
@@ -50,7 +62,7 @@ func connect(url string, dbname string) *mongo.Database {
 	return database
 }
 
-func (m mongoClient) BulkWriteInStudents(roles []Structure.Student, db *badger.DB, bID int) error {
+func (m mongoClient) BulkWriteInStudents(roles []Models.Student, db *badger.DB, bID int) error {
 	var bdoc []interface{}
 	docs, err := json.Marshal(roles)
 	if err != nil {
@@ -60,18 +72,24 @@ func (m mongoClient) BulkWriteInStudents(roles []Structure.Student, db *badger.D
 	if err != nil {
     	panic(err)
 	}
+
+	
+
+	// myoptions := options.IndexOptions
+	// myoptions
+	// m.Logs.Collection("ug").Indexes().ListSpecifications(context.TODO(), {"lastModifiedDate": 3600}, )
 	//m.Logs.CreateCollection("ug", {timeseries:{timeField: "timestamp"}})
 	m.Logs.Collection("ug").InsertMany(context.TODO(),bdoc)
 	fmt.Println("now check")
 	if err != nil {
 		log.Printf("Unable to check access : %v", err)
 	}
-	badgerRabbitmq.DeleteFromBadger(db,bID)
+	DeleteFromBadger(db,bID)
 	return err
 }
 
 func (m mongoClient) GetLastBatchID() int {
-	var JSONData Structure.Student
+	var JSONData Models.Student
 	myOptions := options.FindOne()
 	myOptions.SetSort(bson.M{"$natural":-1})
 	lastRes := m.Logs.Collection("ug").FindOne(context.Background(), bson.M{}, myOptions)

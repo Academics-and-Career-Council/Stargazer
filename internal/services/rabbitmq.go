@@ -1,13 +1,12 @@
-package badgerRabbitmq
+package Services
 
 import (
 	"encoding/json"
 	"fmt"
-	//"log/syslog"
-	//"time"
 
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/structure"
-	//"github.com/Academics-and-Career-Council/Stargazer.git/internal/syslog"
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/database"
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+
 	"github.com/dgraph-io/badger/v3"
 	"github.com/streadway/amqp"
 )
@@ -19,14 +18,7 @@ func check(err error) {
 }
 
 
-func GetFromRabbitMQ(db *badger.DB) {//db *badger.DB    GetFromRabbitMQ
-	// db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-
-	// 	defer db.Close()
-//	fmt.Println(`amqp://guest:guest@rabbitmq/`)
+func GetFromRabbitMQ(db *badger.DB) {
 	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672")
 	if err != nil {
 		fmt.Println("Failed Initializing Broker Connection")
@@ -66,13 +58,17 @@ func GetFromRabbitMQ(db *badger.DB) {//db *badger.DB    GetFromRabbitMQ
 		//go syslog.GetSyslog()
 		for d := range msgs {
 			//fmt.Printf("Recieved Message: %s\n", d.Body)
-			var stud Structure.Student
+			var stud Models.Student
 			err = json.Unmarshal(d.Body, &stud)
-			db.Update(func(txn *badger.Txn) error {
-				err := txn.SetEntry(badger.NewEntry(key(stud.ID), []byte(d.Body)))//to add Withttl
-				fmt.Println("sent to badgerDB", d.Body)
-				return err
-			})
+			//stud.Batch = bID + 1
+			//temp, err := json.Marshal(stud)
+			//check(err)
+			database.WriteToBadger(db, key(stud.ID), []byte(d.Body))
+			// db.Update(func(txn *badger.Txn) error {
+			// 	err := txn.SetEntry(badger.NewEntry(key(stud.ID), []byte(d.Body)))//to add Withttl
+			// 	//fmt.Println("sent to badgerDB", d.Body)
+			// 	return err
+			// })
 		}
 	}()
 	check(err)

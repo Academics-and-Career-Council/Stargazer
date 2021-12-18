@@ -1,4 +1,4 @@
-package syslog
+package API
 
 import (
 	"encoding/json"
