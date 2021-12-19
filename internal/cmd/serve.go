@@ -25,13 +25,16 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		database.ConnectMongo()
 		batchID := database.MongoClient.GetLastBatchID()
-		//all related code here
 		db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
 		if err != nil {
 			panic(err)
 		}
 
 		defer db.Close()
+		//db := database.OpenBadgerDB()
+		
+		//all related code here
+		//db := database.OpenBadgerDB()
 		//batchID := 
 		//db.collection("ug").find({}, {limit: 1}).sort({$natural: -1})
 		//db.Collection.find().limit(1).sort({$natural:-1})
@@ -40,6 +43,7 @@ var serveCmd = &cobra.Command{
 		var studList []Models.Student
 		s := gocron.NewScheduler(time.UTC)
 		flag := false
+		//s.Every(30).Seconds().Do(func() {database.BulkWriteToBadger(db, batchID, flag)})
 		s.Every(30).Seconds().Do(func() {
 			if !flag {
 				flag = true
@@ -50,8 +54,10 @@ var serveCmd = &cobra.Command{
 				batchID = database.MongoClient.GetLastBatchID()
 				fmt.Println(batchID)
 			}
-		})
+		 })
 		
+		//go database.BulkWriteToBadger(db, batchID)
+
 		s.StartAsync()
 		go API.GetSyslog()
 		Services.GetFromRabbitMQ(db)

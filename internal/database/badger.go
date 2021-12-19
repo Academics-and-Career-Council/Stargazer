@@ -3,10 +3,12 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	//"time"
 
 	"github.com/dgraph-io/badger/v3"
+	//"github.com/go-co-op/gocron"
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	//"github.com/Academics-and-Career-Council/Stargazer.git/internal/api"
 )
 
 func checkHere(err error) {
@@ -95,10 +97,40 @@ func DeleteFromBadger(db *badger.DB, bID int) {
 	checkHere(err)
 
 }
- func WriteToBadger(db *badger.DB, key []byte, body []byte) {
+
+func BulkWriteToBadger(db *badger.DB, batchID int, flag bool) {
+		if !flag {
+			flag = true
+		} else {
+			studList := GetFromBadger(db, batchID)
+			fmt.Println(studList)
+			MongoClient.BulkWriteInStudents(studList, db, batchID)
+			batchID = MongoClient.GetLastBatchID()
+			fmt.Println(batchID)
+		}
+}
+// 	// s.StartAsync()
+// 	// go API.GetSyslog()
+// 	// Services.GetFromRabbitMQ(db)
+// 	// //syslog.GetSyslog()
+// 	// s.StartBlocking()
+// }
+
+func WriteToBadger(db *badger.DB, key []byte, body []byte) {
 	db.Update(func(txn *badger.Txn) error {
-		err := txn.SetEntry(badger.NewEntry(key, body))//to add Withttl
+		err := txn.SetEntry(badger.NewEntry(key, body)) //to add Withttl
 		//fmt.Println("sent to badgerDB", d.Body)
 		return err
 	})
- }
+}
+
+func OpenBadgerDB() *badger.DB {
+	db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
+	if err != nil {
+		//fmt.Println("is it here?")
+		panic(err)
+	}
+
+	defer db.Close()
+	return db
+}

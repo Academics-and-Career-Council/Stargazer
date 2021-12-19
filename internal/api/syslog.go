@@ -18,19 +18,36 @@ func GetSyslog() { //GetSyslog
 	server.ListenUDP("0.0.0.0:5140")
 	server.ListenTCP("0.0.0.0:5140")
 	server.Boot()
-	fmt.Println("hi")
+	//fmt.Println("hi")
 
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
-			syslogData, _ := json.Marshal(logParts)
+			// syslogData, _ := json.Marshal(logParts)
+			// var temp interface{}
+			// err := json.Unmarshal(syslogData, &temp)
+			// if err != nil {
+			// 	panic(err)
+			// }
+			fmt.Println(logParts)
+			msgs := logParts["message"].(string)
+			//fmt.Println(msgs)
+			bytVal := []byte(msgs)
+			var msg interface{}
+			err := json.Unmarshal(bytVal, &msg)
+			if err != nil {
+			 	panic(err)
+			}
+			fmt.Println(msg)
+			//unmarshedSysData := string(syslogData)
+
 			//var unmarshedSysData interface{}
 			//err := json.Unmarshal(syslogData, &unmarshedSysData)
-			unmarshedSysData := string(syslogData)
+			//
 			//if err != nil {
 			//	panic(err)
 			//}
-			fmt.Println(unmarshedSysData)
-			fmt.Println("hi")
+			//fmt.Println(unmarshedSysData)
+			//fmt.Println("hi")
 		}
 	}(channel)
 

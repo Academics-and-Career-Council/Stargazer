@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	//"time"
+	"time"
 
 	//"github.com/Academics-and-Career-Council/Stargazer.git/internal/badgerRabbitmq"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	//"go.mongodb.org/mongo-driver/x/bsonx"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 
 	//"golang.org/x/net/internal/timeseries"
 	"github.com/dgraph-io/badger/v3"
@@ -43,14 +43,7 @@ func connect(url string, dbname string) *mongo.Database {
 
 
 	database := client.Database(dbname)
-	// index := mongo.IndexModel{
-	// 	Keys:    bsonx.Doc{{Key: "created_at", Value: bsonx.Int32(1)}},
-	// 	Options: options.Index().SetExpireAfterSeconds(int32(time.Now().Add(time.Second * 90).Unix())), // Will be removed after 24 Hours.
-	// }
-	// _, err = database.Collection("ug").Indexes().CreateOne(context.Background(), index )
-	// if err != nil {
-	// 	panic(err)
-	// } 
+	
 	
 	// database.CreateCollection(context.TODO(), "ug", {
 	// 	timeseries: {
@@ -72,8 +65,14 @@ func (m mongoClient) BulkWriteInStudents(roles []Models.Student, db *badger.DB, 
 	if err != nil {
     	panic(err)
 	}
-
-	
+	index := mongo.IndexModel{
+		Keys:    bsonx.Doc{{Key: "created_at", Value: bsonx.Int32(1)}},
+		Options: options.Index().SetExpireAfterSeconds(int32(time.Duration(90))), 
+	}
+	_, err = m.Logs.Collection("ug").Indexes().CreateOne(context.Background(), index )
+	if err != nil {
+		panic(err)
+	}
 
 	// myoptions := options.IndexOptions
 	// myoptions
