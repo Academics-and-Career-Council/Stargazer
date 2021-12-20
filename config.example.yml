@@ -1,0 +1,10 @@
+mongo:
+  database: #place name of database
+  collName: #place name of collection
+  url: #mongoDB URL
+badger:
+  fileLoc: #location of the badger db in local system(ideally temp/badger)
+rabbitMQ:
+  url: amqp://guest:guest@rabbitmq:5672/ #rabbitMQ url
+syslog:
+  port: 0.0.0.0:5140 #port for the readymade services(here kratos, as described in docker-compose)

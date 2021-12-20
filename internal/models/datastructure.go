@@ -1,7 +1,6 @@
 package Models
 
 import (
-	"time"
 
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
@@ -16,8 +15,14 @@ type Student struct {
 }
 
 type Syslog struct {
-	Service  	string		`json:"service"`
-	SeverityLvl	string		`json:"severityLvl"`
+	ID			int			`json:"id_for_ref"`
+	ServiceName string		`json:"service_name"`
+	StatusCode	int			`json:"status_code"`
+	Severity	string		`json:"severity"`
+	MsgName		string		`json:"msg_name"`
 	Msg			string		`json:"msg"`
-	TimeStamp 	time.Time	`json:"timestamp"`
+	InvokedBy	string		`json:"invoked_by"`
+	Result		string		`json:"result"`
+	Batch      	int    		`json:"batch"`
+	Timestamp	int64		`json:"timestamp"`
 }

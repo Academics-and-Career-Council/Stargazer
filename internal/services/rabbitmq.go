@@ -3,11 +3,15 @@ package Services
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/api"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/database"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	"github.com/spf13/viper"
 
 	"github.com/dgraph-io/badger/v3"
+	"github.com/go-co-op/gocron"
 	"github.com/streadway/amqp"
 )
 
@@ -19,7 +23,7 @@ func check(err error) {
 
 
 func GetFromRabbitMQ(db *badger.DB) {
-	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672")
+	conn, err := amqp.Dial(viper.GetString("rabbitMQ.url"))
 	if err != nil {
 		fmt.Println("Failed Initializing Broker Connection")
 		panic(err)
@@ -55,24 +59,57 @@ func GetFromRabbitMQ(db *badger.DB) {
 
 	forever := make(chan bool)
 	go func() {
-		//go syslog.GetSyslog()
 		for d := range msgs {
-			//fmt.Printf("Recieved Message: %s\n", d.Body)
-			var stud Models.Student
+			var stud Models.Syslog
 			err = json.Unmarshal(d.Body, &stud)
-			//stud.Batch = bID + 1
-			//temp, err := json.Marshal(stud)
-			//check(err)
 			database.WriteToBadger(db, key(stud.ID), []byte(d.Body))
-			// db.Update(func(txn *badger.Txn) error {
-			// 	err := txn.SetEntry(badger.NewEntry(key(stud.ID), []byte(d.Body)))//to add Withttl
-			// 	//fmt.Println("sent to badgerDB", d.Body)
-			// 	return err
-			// })
 		}
 	}()
 	check(err)
 	fmt.Println("Successfully Connected to our RabbitMQ Instance")
 	fmt.Println(" [*] - Waiting for messages")
 	<-forever
+}
+
+
+func WriteToRabbitMQ() {
+
+	s := gocron.NewScheduler(time.UTC)
+
+	fmt.Println("Go RabbitMQ Tutorial")
+	conn, err := amqp.Dial(viper.GetString("rabbitMQ.url"))
+	if err != nil {
+		fmt.Println(err)
+		panic(1)
+	}
+	defer conn.Close()
+
+	fmt.Println("Successfully Connected to our RabbitMQ Instance")
+
+	ch, err := conn.Channel()
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"TestQueue",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+
+	if err != nil  {
+		fmt.Println(err)
+		panic(err)
+	}
+	fmt.Println(q)
+
+	go API.GetSyslog(ch)
+
+	s.StartAsync()
+	s.StartBlocking()
 }

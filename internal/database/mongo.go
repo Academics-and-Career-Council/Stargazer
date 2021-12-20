@@ -7,17 +7,17 @@ import (
 	"log"
 	"time"
 
-	//"github.com/Academics-and-Career-Council/Stargazer.git/internal/badgerRabbitmq"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 
-	//"golang.org/x/net/internal/timeseries"
 	"github.com/dgraph-io/badger/v3"
 	"gopkg.in/mgo.v2/bson"
 )
+
+
 
 type mongoClient struct {
 	Logs *mongo.Database
@@ -40,22 +40,11 @@ func connect(url string, dbname string) *mongo.Database {
 		log.Fatalf("Unable to Connect to MongoDB %v", err)
 	}
 	log.Printf("Connected to MongoDB! URL : %s", url)
-
-
 	database := client.Database(dbname)
-	
-	
-	// database.CreateCollection(context.TODO(), "ug", {
-	// 	timeseries: {
-	// 		timeField: "timestamp",
-	// 		metaField: "metadata",
-	// 		granularity: "hours"
-	// 	}
-    // })
 	return database
 }
 
-func (m mongoClient) BulkWriteInStudents(roles []Models.Student, db *badger.DB, bID int) error {
+func (m mongoClient) BulkWriteInSyslog(roles []Models.Syslog, db *badger.DB, bID int) error {
 	var bdoc []interface{}
 	docs, err := json.Marshal(roles)
 	if err != nil {
@@ -69,17 +58,14 @@ func (m mongoClient) BulkWriteInStudents(roles []Models.Student, db *badger.DB, 
 		Keys:    bsonx.Doc{{Key: "created_at", Value: bsonx.Int32(1)}},
 		Options: options.Index().SetExpireAfterSeconds(int32(time.Duration(90))), 
 	}
-	_, err = m.Logs.Collection("ug").Indexes().CreateOne(context.Background(), index )
+	collName := viper.GetString("mongo.collName")
+	_, err = m.Logs.Collection(collName).Indexes().CreateOne(context.Background(), index )
 	if err != nil {
 		panic(err)
 	}
 
-	// myoptions := options.IndexOptions
-	// myoptions
-	// m.Logs.Collection("ug").Indexes().ListSpecifications(context.TODO(), {"lastModifiedDate": 3600}, )
-	//m.Logs.CreateCollection("ug", {timeseries:{timeField: "timestamp"}})
-	m.Logs.Collection("ug").InsertMany(context.TODO(),bdoc)
-	fmt.Println("now check")
+	m.Logs.Collection(collName).InsertMany(context.TODO(),bdoc)
+	fmt.Println("Successfully Sent a batch to mongoDB")
 	if err != nil {
 		log.Printf("Unable to check access : %v", err)
 	}
@@ -88,16 +74,15 @@ func (m mongoClient) BulkWriteInStudents(roles []Models.Student, db *badger.DB, 
 }
 
 func (m mongoClient) GetLastBatchID() int {
-	var JSONData Models.Student
+	collName := viper.GetString("mongo.collName")
+	var JSONData Models.Syslog
 	myOptions := options.FindOne()
 	myOptions.SetSort(bson.M{"$natural":-1})
-	lastRes := m.Logs.Collection("ug").FindOne(context.Background(), bson.M{}, myOptions)
+	lastRes := m.Logs.Collection(collName).FindOne(context.Background(), bson.M{}, myOptions)
 	err := lastRes.Decode(&JSONData)
  	if err!= nil {
-		//panic(err)
 		return -1
 	}
-	//fmt.Println(JSONData)
 	batchID := JSONData.Batch
  	return batchID
 }

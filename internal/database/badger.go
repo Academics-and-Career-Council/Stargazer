@@ -3,12 +3,12 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	//"time"
+	"time"
 
 	"github.com/dgraph-io/badger/v3"
-	//"github.com/go-co-op/gocron"
+	"github.com/spf13/viper"
+	"github.com/go-co-op/gocron"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
-	//"github.com/Academics-and-Career-Council/Stargazer.git/internal/api"
 )
 
 func checkHere(err error) {
@@ -17,9 +17,10 @@ func checkHere(err error) {
 	}
 }
 
-func GetFromBadger(db *badger.DB, bID int) []Models.Student {
+func GetFromBadger(db *badger.DB, bID int) []Models.Syslog {
 
-	var studList []Models.Student
+	var studList []Models.Syslog
+	flag := false
 
 	var itr *badger.Iterator
 	err := db.View(func(txn *badger.Txn) error {
@@ -35,10 +36,9 @@ func GetFromBadger(db *badger.DB, bID int) []Models.Student {
 
 				item.Value(func(val []byte) error {
 					p := append([]byte{}, val...)
-					var new Models.Student
+					var new Models.Syslog
 					json.Unmarshal(p, &new)
 					new.Batch = bID + 1
-					fmt.Println(new)
 					key := func(i int) []byte {
 						return []byte(fmt.Sprintf("%d", i))
 					}
@@ -46,7 +46,10 @@ func GetFromBadger(db *badger.DB, bID int) []Models.Student {
 					checkHere(err)
 					err = txn.Set(key(new.ID), []byte(temp))
 					checkHere(err)
-					studList = append(studList, new)
+					if new.ServiceName != "" {
+						studList = append(studList, new)
+						flag = true
+					}
 					return nil
 				})
 				return nil
@@ -57,7 +60,9 @@ func GetFromBadger(db *badger.DB, bID int) []Models.Student {
 		return nil
 	})
 	checkHere(err)
-
+	if !flag {
+		return nil
+	}
 	return studList
 }
 func DeleteFromBadger(db *badger.DB, bID int) {
@@ -75,7 +80,7 @@ func DeleteFromBadger(db *badger.DB, bID int) {
 				checkHere(err)
 				item.Value(func(val []byte) error {
 					p := append([]byte{}, val...)
-					var new Models.Student
+					var new Models.Syslog
 					json.Unmarshal(p, &new)
 					delBID := bID + 1
 					key := func(i int) []byte {
@@ -98,39 +103,40 @@ func DeleteFromBadger(db *badger.DB, bID int) {
 
 }
 
-func BulkWriteToBadger(db *badger.DB, batchID int, flag bool) {
+func BulkWrite(db *badger.DB) {
+	flag := false
+	batchID := MongoClient.GetLastBatchID()
+
+	s := gocron.NewScheduler(time.UTC)
+
+	s.Every(30).Seconds().Do(func ()  {	
 		if !flag {
 			flag = true
 		} else {
 			studList := GetFromBadger(db, batchID)
-			fmt.Println(studList)
-			MongoClient.BulkWriteInStudents(studList, db, batchID)
+			MongoClient.BulkWriteInSyslog(studList, db, batchID)
 			batchID = MongoClient.GetLastBatchID()
-			fmt.Println(batchID)
 		}
+	})
+	s.StartAsync()
+	s.StartBlocking()
 }
-// 	// s.StartAsync()
-// 	// go API.GetSyslog()
-// 	// Services.GetFromRabbitMQ(db)
-// 	// //syslog.GetSyslog()
-// 	// s.StartBlocking()
-// }
+
+
 
 func WriteToBadger(db *badger.DB, key []byte, body []byte) {
 	db.Update(func(txn *badger.Txn) error {
-		err := txn.SetEntry(badger.NewEntry(key, body)) //to add Withttl
-		//fmt.Println("sent to badgerDB", d.Body)
+		err := txn.SetEntry(badger.NewEntry(key, body))
 		return err
 	})
 }
 
 func OpenBadgerDB() *badger.DB {
-	db, err := badger.Open(badger.DefaultOptions("/tmp/badger"))
+	db, err := badger.Open(badger.DefaultOptions(viper.GetString("badger.fileLoc")))
 	if err != nil {
-		//fmt.Println("is it here?")
 		panic(err)
 	}
 
-	defer db.Close()
+	//defer db.Close()
 	return db
 }

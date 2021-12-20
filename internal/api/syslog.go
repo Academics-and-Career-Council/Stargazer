@@ -3,51 +3,72 @@ package API
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
+	Models "github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	"github.com/spf13/viper"
+	"github.com/streadway/amqp"
 	"gopkg.in/mcuadros/go-syslog.v2"
-	//"github.com/Academics-and-Career-Council/Stargazer.git/internal/structure"
 )
 
-func GetSyslog() { //GetSyslog
+func GetSyslog(ch *amqp.Channel) { 
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 
 	server := syslog.NewServer()
 	server.SetFormat(syslog.RFC5424)
 	server.SetHandler(handler)
-	server.ListenUDP("0.0.0.0:5140")
-	server.ListenTCP("0.0.0.0:5140")
+	server.ListenUDP(viper.GetString("syslog.port"))
+	server.ListenTCP(viper.GetString("syslog.port"))
 	server.Boot()
-	//fmt.Println("hi")
-
+	countID := 0
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
-			// syslogData, _ := json.Marshal(logParts)
-			// var temp interface{}
-			// err := json.Unmarshal(syslogData, &temp)
-			// if err != nil {
-			// 	panic(err)
-			// }
-			fmt.Println(logParts)
 			msgs := logParts["message"].(string)
-			//fmt.Println(msgs)
 			bytVal := []byte(msgs)
 			var msg interface{}
 			err := json.Unmarshal(bytVal, &msg)
 			if err != nil {
 			 	panic(err)
 			}
-			fmt.Println(msg)
-			//unmarshedSysData := string(syslogData)
+			temp := msg.(map[string]interface{})
+			countID = countID + 1
+			Ctime := temp["time"].(string)
+			layout := "2006-01-02T15:04:05Z"
+			T, err := time.Parse(layout, Ctime)
+			if err!=nil {
+				panic(err)
+			}
+			tMS := T.UnixMilli()
+			var singleLog Models.Syslog
+			singleLog.ID = countID + 1
+			singleLog.ServiceName = logParts["app_name"].(string)
+			singleLog.Severity = temp["level"].(string)
+			singleLog.Msg = temp["msg"].(string)
+			singleLog.Batch = -2
+			singleLog.InvokedBy = singleLog.ServiceName+"@iitk.ac.in"
+			singleLog.MsgName = singleLog.ServiceName+" "+singleLog.Severity
+			singleLog.Result = "NA"
+			singleLog.StatusCode = 500
+			singleLog.Timestamp = tMS
 
-			//var unmarshedSysData interface{}
-			//err := json.Unmarshal(syslogData, &unmarshedSysData)
-			//
-			//if err != nil {
-			//	panic(err)
-			//}
-			//fmt.Println(unmarshedSysData)
-			//fmt.Println("hi")
+
+			data, _ := json.Marshal(singleLog)
+			BodyJson := string(data)
+			err = ch.Publish(
+				"",
+				"TestQueue",
+				false,
+				false,
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body: []byte(BodyJson),
+				},
+			)
+			if err != nil {
+				fmt.Println(err)
+				panic(err)
+			}
 		}
 	}(channel)
 
