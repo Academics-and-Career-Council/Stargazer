@@ -42,7 +42,7 @@ func connect(url string, dbname string) *mongo.Database {
 	database := client.Database(dbname)
 	model := mongo.IndexModel{
 		Keys:    bson.M{"createdAt": 1},
-		Options: options.Index().SetExpireAfterSeconds(int32((5*time.Minute) / time.Second)),
+		Options: options.Index().SetExpireAfterSeconds(int32((14*24*time.Hour) / time.Second)),
 	}
 	ind, err := database.Collection("ug").Indexes().CreateOne(context.TODO(), model)
 	if err != nil {

@@ -119,7 +119,7 @@ func BulkWrite(db *badger.DB) {
 
 	s := gocron.NewScheduler(time.UTC)
 
-	s.Every(30).Seconds().Do(func ()  {	
+	s.Every(1).Hour().Do(func ()  {	
 		if !flag {
 			flag = true
 		} else {

@@ -57,13 +57,15 @@ func GetFromRabbitMQ(db *badger.DB) {
 	key := func(i int) []byte {
 		return []byte(fmt.Sprintf("%d", i))
 	}
-
+	refID := 1
 	forever := make(chan bool)
 	go func() {
 		for d := range msgs {
 			log.Println("recieved log from RabbitMQ")
 			var stud Models.Syslog
 			err = json.Unmarshal(d.Body, &stud)
+			stud.ID = refID
+			refID = refID +1
 			database.WriteToBadger(db, key(stud.ID), []byte(d.Body))
 		}
 	}()

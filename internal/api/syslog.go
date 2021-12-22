@@ -21,7 +21,7 @@ func GetSyslog(ch *amqp.Channel) {
 	server.ListenUDP(viper.GetString("syslog.port"))
 	server.ListenTCP(viper.GetString("syslog.port"))
 	server.Boot()
-	countID := 0
+	//countID := 0
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
 			msgs := logParts["message"].(string)
@@ -32,7 +32,7 @@ func GetSyslog(ch *amqp.Channel) {
 			 	panic(err)
 			}
 			temp := msg.(map[string]interface{})
-			countID = countID + 1
+			//countID = countID + 1
 			Ctime := temp["time"].(string)
 			layout := "2006-01-02T15:04:05Z"
 			T, err := time.Parse(layout, Ctime)
@@ -40,11 +40,10 @@ func GetSyslog(ch *amqp.Channel) {
 				panic(err)
 			}
 			var singleLog Models.Syslog
-			singleLog.ID = countID + 1
+			//singleLog.ID = countID + 1
 			singleLog.ServiceName = logParts["app_name"].(string)
 			singleLog.Severity = temp["level"].(string)
 			singleLog.Msg = temp["msg"].(string)
-			singleLog.Batch = -2
 			singleLog.InvokedBy = singleLog.ServiceName+"@iitk.ac.in"
 			singleLog.MsgName = singleLog.ServiceName+" "+singleLog.Severity
 			singleLog.Result = "NA"
