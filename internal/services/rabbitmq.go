@@ -3,6 +3,7 @@ package Services
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/api"
@@ -60,6 +61,7 @@ func GetFromRabbitMQ(db *badger.DB) {
 	forever := make(chan bool)
 	go func() {
 		for d := range msgs {
+			log.Println("recieved log from RabbitMQ")
 			var stud Models.Syslog
 			err = json.Unmarshal(d.Body, &stud)
 			database.WriteToBadger(db, key(stud.ID), []byte(d.Body))

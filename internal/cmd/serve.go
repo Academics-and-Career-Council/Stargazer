@@ -15,7 +15,7 @@ var serveCmd = &cobra.Command{
 	Short: "Starts the Fiber Server",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		database.ConnectMongo()
-		go Services.WriteToRabbitMQ()
+		go Services.WriteToRabbitMQ() //for kratos
 		db := database.OpenBadgerDB()
 		defer db.Close()
 		go database.BulkWrite(db)

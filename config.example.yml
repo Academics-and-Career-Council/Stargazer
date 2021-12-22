@@ -8,3 +8,5 @@ rabbitMQ:
   url: amqp://guest:guest@rabbitmq:5672/ #rabbitMQ url
 syslog:
   port: 0.0.0.0:5140 #port for the readymade services(here kratos, as described in docker-compose)
+severityCheck:
+  severity: #insert the lowest level to be written to mongo (refer "syslog severity levels")

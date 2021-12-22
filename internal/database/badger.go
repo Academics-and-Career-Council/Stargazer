@@ -3,12 +3,13 @@ package database
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
-	"github.com/dgraph-io/badger/v3"
-	"github.com/spf13/viper"
-	"github.com/go-co-op/gocron"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	"github.com/dgraph-io/badger/v3"
+	"github.com/go-co-op/gocron"
+	"github.com/spf13/viper"
 )
 
 func checkHere(err error) {
@@ -46,7 +47,14 @@ func GetFromBadger(db *badger.DB, bID int) []Models.Syslog {
 					checkHere(err)
 					err = txn.Set(key(new.ID), []byte(temp))
 					checkHere(err)
-					if new.ServiceName != "" {
+					sevLvl := ConvertSevirity(new.Severity)
+					reqSeverity := ConvertSevirity(viper.GetString("severityCheck.severity"))
+					allow := false
+					if sevLvl <= reqSeverity {
+						allow = true
+					}
+					
+					if new.ServiceName != "" && allow {
 						studList = append(studList, new)
 						flag = true
 					}
@@ -63,6 +71,7 @@ func GetFromBadger(db *badger.DB, bID int) []Models.Syslog {
 	if !flag {
 		return nil
 	}
+	log.Println("successfully read one batch from BadgerDB")
 	return studList
 }
 func DeleteFromBadger(db *badger.DB, bID int) {
@@ -100,6 +109,7 @@ func DeleteFromBadger(db *badger.DB, bID int) {
 		return nil
 	})
 	checkHere(err)
+	log.Println("Deleted previous batch")
 
 }
 
@@ -127,6 +137,11 @@ func BulkWrite(db *badger.DB) {
 func WriteToBadger(db *badger.DB, key []byte, body []byte) {
 	db.Update(func(txn *badger.Txn) error {
 		err := txn.SetEntry(badger.NewEntry(key, body))
+		if err != nil {
+			panic(err)
+		} else {
+			log.Println("written to BadgerDB")
+		}
 		return err
 	})
 }
@@ -139,4 +154,28 @@ func OpenBadgerDB() *badger.DB {
 
 	//defer db.Close()
 	return db
+}
+
+func ConvertSevirity(sev string) int {
+	var lvl int
+	if sev == "emerg" {
+		lvl = 0
+	} else if sev == "alert" {
+		lvl = 1
+	} else if sev == "crit" {
+		lvl = 2
+	} else if sev == "err" {
+		lvl = 3
+	} else if sev == "warning" {
+		lvl = 4
+	} else if sev == "notice" {
+		lvl = 5
+	} else if sev == "info" {
+		lvl = 6
+	} else if sev == "debug" {
+		lvl = 7
+	}else {
+		panic("invalid severity type")
+	}
+	return lvl
 }

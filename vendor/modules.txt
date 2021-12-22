@@ -1,3 +1,6 @@
+# github.com/Pallinder/go-randomdata v1.2.0
+## explicit
+github.com/Pallinder/go-randomdata
 # github.com/cespare/xxhash v1.1.0
 ## explicit
 github.com/cespare/xxhash
@@ -83,9 +86,6 @@ github.com/mitchellh/go-homedir
 github.com/mitchellh/mapstructure
 # github.com/nleeper/goment v1.4.2
 ## explicit; go 1.14
-github.com/nleeper/goment
-github.com/nleeper/goment/locales
-github.com/nleeper/goment/regexps
 # github.com/pelletier/go-toml v1.9.4
 ## explicit; go 1.12
 github.com/pelletier/go-toml
@@ -127,7 +127,6 @@ github.com/streadway/amqp
 github.com/subosito/gotenv
 # github.com/tkuchiki/go-timezone v0.2.0
 ## explicit
-github.com/tkuchiki/go-timezone
 # github.com/xdg-go/pbkdf2 v1.0.0
 ## explicit; go 1.9
 github.com/xdg-go/pbkdf2

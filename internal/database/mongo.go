@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 
 	"github.com/dgraph-io/badger/v3"
 	"gopkg.in/mgo.v2/bson"
@@ -41,6 +40,15 @@ func connect(url string, dbname string) *mongo.Database {
 	}
 	log.Printf("Connected to MongoDB! URL : %s", url)
 	database := client.Database(dbname)
+	model := mongo.IndexModel{
+		Keys:    bson.M{"createdAt": 1},
+		Options: options.Index().SetExpireAfterSeconds(int32((5*time.Minute) / time.Second)),
+	}
+	ind, err := database.Collection("ug").Indexes().CreateOne(context.TODO(), model)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(ind)
 	return database
 }
 
@@ -54,20 +62,17 @@ func (m mongoClient) BulkWriteInSyslog(roles []Models.Syslog, db *badger.DB, bID
 	if err != nil {
     	panic(err)
 	}
-	index := mongo.IndexModel{
-		Keys:    bsonx.Doc{{Key: "created_at", Value: bsonx.Int32(1)}},
-		Options: options.Index().SetExpireAfterSeconds(int32(time.Duration(90))), 
-	}
-	collName := viper.GetString("mongo.collName")
-	_, err = m.Logs.Collection(collName).Indexes().CreateOne(context.Background(), index )
-	if err != nil {
-		panic(err)
+	data := []interface{} {}
+	for role := range roles {
+		data = append(data, roles[role])
 	}
 
-	m.Logs.Collection(collName).InsertMany(context.TODO(),bdoc)
-	fmt.Println("Successfully Sent a batch to mongoDB")
-	if err != nil {
-		log.Printf("Unable to check access : %v", err)
+	collName := viper.GetString("mongo.collName")
+
+
+ 	_, err = m.Logs.Collection(collName).InsertMany(context.TODO(),data)
+	if data != nil && err == nil {
+		log.Println("Inserted the batch to mongoDB")
 	}
 	DeleteFromBadger(db,bID)
 	return err
@@ -84,5 +89,6 @@ func (m mongoClient) GetLastBatchID() int {
 		return -1
 	}
 	batchID := JSONData.Batch
+	fmt.Println(batchID)
  	return batchID
 }

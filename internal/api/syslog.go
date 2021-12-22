@@ -39,7 +39,6 @@ func GetSyslog(ch *amqp.Channel) {
 			if err!=nil {
 				panic(err)
 			}
-			tMS := T.UnixMilli()
 			var singleLog Models.Syslog
 			singleLog.ID = countID + 1
 			singleLog.ServiceName = logParts["app_name"].(string)
@@ -50,7 +49,8 @@ func GetSyslog(ch *amqp.Channel) {
 			singleLog.MsgName = singleLog.ServiceName+" "+singleLog.Severity
 			singleLog.Result = "NA"
 			singleLog.StatusCode = 500
-			singleLog.Timestamp = tMS
+			singleLog.Timestamp = T
+			singleLog.CreatedAt = time.Now()
 
 
 			data, _ := json.Marshal(singleLog)
