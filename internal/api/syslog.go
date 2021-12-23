@@ -1,17 +1,23 @@
 package API
 
+
 import (
 	"encoding/json"
-	"fmt"
+	"log"
+
+	//"fmt"
 	"time"
 
+	"github.com/Academics-and-Career-Council/Stargazer.git/internal/database"
 	Models "github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/spf13/viper"
-	"github.com/streadway/amqp"
+
+	"github.com/matoous/go-nanoid/v2"
 	"gopkg.in/mcuadros/go-syslog.v2"
 )
 
-func GetSyslog(ch *amqp.Channel) { 
+func GetSyslog(db *badger.DB) { 
 	channel := make(syslog.LogPartsChannel)
 	handler := syslog.NewChannelHandler(channel)
 
@@ -21,10 +27,10 @@ func GetSyslog(ch *amqp.Channel) {
 	server.ListenUDP(viper.GetString("syslog.port"))
 	server.ListenTCP(viper.GetString("syslog.port"))
 	server.Boot()
-	//countID := 0
+	
 	go func(channel syslog.LogPartsChannel) {
 		for logParts := range channel {
-			msgs := logParts["message"].(string)
+			msgs := logParts["message"].(string)//data from recieved logs from kratos is extracted 
 			bytVal := []byte(msgs)
 			var msg interface{}
 			err := json.Unmarshal(bytVal, &msg)
@@ -32,7 +38,6 @@ func GetSyslog(ch *amqp.Channel) {
 			 	panic(err)
 			}
 			temp := msg.(map[string]interface{})
-			//countID = countID + 1
 			Ctime := temp["time"].(string)
 			layout := "2006-01-02T15:04:05Z"
 			T, err := time.Parse(layout, Ctime)
@@ -40,7 +45,6 @@ func GetSyslog(ch *amqp.Channel) {
 				panic(err)
 			}
 			var singleLog Models.Syslog
-			//singleLog.ID = countID + 1
 			singleLog.ServiceName = logParts["app_name"].(string)
 			singleLog.Severity = temp["level"].(string)
 			singleLog.Msg = temp["msg"].(string)
@@ -51,23 +55,15 @@ func GetSyslog(ch *amqp.Channel) {
 			singleLog.Timestamp = T
 			singleLog.CreatedAt = time.Now()
 
-
+			//All data is put into a log object
 			data, _ := json.Marshal(singleLog)
-			BodyJson := string(data)
-			err = ch.Publish(
-				"",
-				"TestQueue",
-				false,
-				false,
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body: []byte(BodyJson),
-				},
-			)
-			if err != nil {
-				fmt.Println(err)
-				panic(err)
+			id, err := gonanoid.New()
+			ID := []byte(id)
+			if err!=nil {
+				log.Println(err)
 			}
+			database.WriteToBadger(db, ID, data)//object is sent to badgerDB
+
 		}
 	}(channel)
 

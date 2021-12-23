@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/go-co-op/gocron v1.11.0
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.0
@@ -56,7 +57,8 @@ require (
 )
 
 require (
-	github.com/Pallinder/go-randomdata v1.2.0
+	github.com/Pallinder/go-randomdata v1.2.0 // indirect
+	github.com/google/uuid v1.3.0
 	github.com/nleeper/goment v1.4.2 // indirect
 	github.com/streadway/amqp v1.0.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

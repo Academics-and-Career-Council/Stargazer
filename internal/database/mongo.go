@@ -44,7 +44,7 @@ func connect(url string, dbname string) *mongo.Database {
 		Keys:    bson.M{"createdAt": 1},
 		Options: options.Index().SetExpireAfterSeconds(int32((14*24*time.Hour) / time.Second)),
 	}
-	ind, err := database.Collection("ug").Indexes().CreateOne(context.TODO(), model)
+	ind, err := database.Collection("ug").Indexes().CreateOne(context.TODO(), model)//initialising to set a TTL
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,12 +65,12 @@ func (m mongoClient) BulkWriteInSyslog(roles []Models.Syslog, db *badger.DB, bID
 	data := []interface{} {}
 	for role := range roles {
 		data = append(data, roles[role])
-	}
+	}//converting into appropriate form
 
 	collName := viper.GetString("mongo.collName")
 
 
- 	_, err = m.Logs.Collection(collName).InsertMany(context.TODO(),data)
+ 	_, err = m.Logs.Collection(collName).InsertMany(context.TODO(),data)//this writes to mongoDB
 	if data != nil && err == nil {
 		log.Println("Inserted the batch to mongoDB")
 	}

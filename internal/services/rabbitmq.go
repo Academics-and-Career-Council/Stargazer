@@ -6,13 +6,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/Academics-and-Career-Council/Stargazer.git/internal/api"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/database"
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/models"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/spf13/viper"
 
 	"github.com/dgraph-io/badger/v3"
-	"github.com/go-co-op/gocron"
 	"github.com/streadway/amqp"
 )
 
@@ -54,19 +53,21 @@ func GetFromRabbitMQ(db *badger.DB) {
 	wb := db.NewWriteBatch()
 	defer wb.Cancel()
 	
-	key := func(i int) []byte {
-		return []byte(fmt.Sprintf("%d", i))
-	}
-	refID := 1
+
 	forever := make(chan bool)
 	go func() {
 		for d := range msgs {
 			log.Println("recieved log from RabbitMQ")
 			var stud Models.Syslog
 			err = json.Unmarshal(d.Body, &stud)
-			stud.ID = refID
-			refID = refID +1
-			database.WriteToBadger(db, key(stud.ID), []byte(d.Body))
+			stud.Timestamp = time.Now()
+			d.Body, err = json.Marshal(stud)
+			id, err := gonanoid.New()
+			ID := []byte(id)
+			if err!=nil {
+				log.Println(err)
+			}
+			database.WriteToBadger(db, ID, []byte(d.Body))
 		}
 	}()
 	check(err)
@@ -76,44 +77,3 @@ func GetFromRabbitMQ(db *badger.DB) {
 }
 
 
-func WriteToRabbitMQ() {
-
-	s := gocron.NewScheduler(time.UTC)
-
-	fmt.Println("Go RabbitMQ Tutorial")
-	conn, err := amqp.Dial(viper.GetString("rabbitMQ.url"))
-	if err != nil {
-		fmt.Println(err)
-		panic(1)
-	}
-	defer conn.Close()
-
-	fmt.Println("Successfully Connected to our RabbitMQ Instance")
-
-	ch, err := conn.Channel()
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		"TestQueue",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-
-	if err != nil  {
-		fmt.Println(err)
-		panic(err)
-	}
-	fmt.Println(q)
-
-	go API.GetSyslog(ch)
-
-	s.StartAsync()
-	s.StartBlocking()
-}

@@ -1,6 +1,5 @@
 # github.com/Pallinder/go-randomdata v1.2.0
 ## explicit
-github.com/Pallinder/go-randomdata
 # github.com/cespare/xxhash v1.1.0
 ## explicit
 github.com/cespare/xxhash
@@ -52,6 +51,9 @@ github.com/golang/snappy
 # github.com/google/flatbuffers v1.12.1
 ## explicit
 github.com/google/flatbuffers/go
+# github.com/google/uuid v1.3.0
+## explicit
+github.com/google/uuid
 # github.com/hashicorp/hcl v1.0.0
 ## explicit
 github.com/hashicorp/hcl
@@ -78,6 +80,9 @@ github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/magiconair/properties v1.8.5
 ## explicit; go 1.13
 github.com/magiconair/properties
+# github.com/matoous/go-nanoid/v2 v2.0.0
+## explicit; go 1.15
+github.com/matoous/go-nanoid/v2
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir

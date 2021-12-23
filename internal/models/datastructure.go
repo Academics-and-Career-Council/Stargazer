@@ -16,7 +16,6 @@ type Student struct {
 }
 
 type Syslog struct {
-	ID			int			`bson:"id_for_ref"`
 	ServiceName string		`bson:"service_name"`
 	StatusCode	int			`bson:"status_code"`
 	Severity	string		`bson:"severity"`
