@@ -24,7 +24,32 @@ RUN apt-get update \
     # Use Docker script from script library to set things up
     && /bin/bash /tmp/library-scripts/docker-debian.sh "${ENABLE_NONROOT_DOCKER}" "/var/run/docker-host.sock" "/var/run/docker.sock" "${USERNAME}" \
     # Clean up
-    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts/ \
+    && wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz \
+    && wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz.sig \
+    && wget https://download.libsodium.org/jedi.gpg.asc \
+    && gpg --import jedi.gpg.asc \
+    && gpg --verify libsodium-1.0.18.tar.gz.sig libsodium-1.0.18.tar.gz \
+    && tar zxvf libsodium-1.0.18.tar.gz \
+    && cd libsodium-1.0.8 \
+    && ./configure; make check \
+    && sudo make install \
+    && sudo ldconfig \
+    && git clone https://github.com/zeromq/libzmq.git \
+    && cd libzmq \
+    && ./autogen.sh \
+    && ./configure --with-libsodium \
+    && make check \
+    && sudo make install \
+    && sudo ldconfig \
+    && cd .. \
+    && git clone https://github.com/zeromq/czmq.git \
+    && cd libzmq \
+    && ./autogen.sh \
+    && ./configure \
+    && make check \
+    && sudo make install \
+    && sudo ldconfig
 
 # Setting the ENTRYPOINT to docker-init.sh will configure non-root access 
 # to the Docker socket. The script will also execute CMD as needed.

@@ -7,7 +7,6 @@ import (
 	"github.com/Academics-and-Career-Council/Stargazer.git/internal/cmd"
 )
 
-
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }

@@ -37,7 +37,7 @@ func GetFromBadger(db *badger.DB, bID int) []Models.Syslog {
 					p := append([]byte{}, val...)
 					var new Models.Syslog
 					json.Unmarshal(p, &new)
-					new.Batch = bID + 1//changes Batch ID to make it unique from previous batch
+					new.Batch = bID + 1 //changes Batch ID to make it unique from previous batch
 					temp, err := json.Marshal(new)
 					checkHere(err)
 					err = txn.Set(itr.Item().Key(), []byte(temp))
@@ -48,10 +48,10 @@ func GetFromBadger(db *badger.DB, bID int) []Models.Syslog {
 					if sevLvl <= reqSeverity {
 						allow = true
 					}
-					
+
 					if new.ServiceName != "" && allow {
 						studList = append(studList, new)
-						
+
 						flag = true
 					}
 					return nil
@@ -88,9 +88,9 @@ func DeleteFromBadger(db *badger.DB, bID int) {
 					var new Models.Syslog
 					json.Unmarshal(p, &new)
 					delBID := bID + 1
-					
+
 					if delBID == new.Batch {
-						txn.Delete(itr.Item().Key())//deletes all data in badger from previous batch
+						txn.Delete(itr.Item().Key()) //deletes all data in badger from previous batch
 					}
 
 					return nil
@@ -107,25 +107,23 @@ func DeleteFromBadger(db *badger.DB, bID int) {
 
 }
 
-func BulkWrite(db *badger.DB) {//write to mongo from badgerDB
-	batchID := MongoClient.GetLastBatchID()//gets last batch ID from mongoDB
+func BulkWrite(db *badger.DB) { //write to mongo from badgerDB
+	batchID := MongoClient.GetLastBatchID() //gets last batch ID from mongoDB
 
 	s := gocron.NewScheduler(time.UTC)
-	time.Sleep(20*time.Second)
-	s.Every(1).Hour().Do(func ()  {	
-		studList := GetFromBadger(db, batchID)//returns all students in badger 
-		MongoClient.BulkWriteInSyslog(studList, db, batchID)//writes everything to mongo finally
-		batchID = MongoClient.GetLastBatchID()//updates the batchID
+	time.Sleep(20 * time.Second)
+	s.Every(1).Minute().Do(func() {
+		studList := GetFromBadger(db, batchID)               //returns all students in badger
+		MongoClient.BulkWriteInSyslog(studList, db, batchID) //writes everything to mongo finally
+		batchID = MongoClient.GetLastBatchID()               //updates the batchID
 	})
 	s.StartAsync()
 	s.StartBlocking()
 }
 
-
-
 func WriteToBadger(db *badger.DB, key []byte, body []byte) {
 	db.Update(func(txn *badger.Txn) error {
-		err := txn.SetEntry(badger.NewEntry(key, body))//object sent to badgerDB
+		err := txn.SetEntry(badger.NewEntry(key, body)) //object sent to badgerDB
 		if err != nil {
 			panic(err)
 		} else {
@@ -163,8 +161,9 @@ func ConvertSevirity(sev string) int {
 		lvl = 6
 	} else if sev == "debug" {
 		lvl = 7
-	}else {
-		panic("invalid severity type")
+	} else {
+		log.Println("invalid severity type")
+		lvl = -1
 	}
 	return lvl
 }
