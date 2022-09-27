@@ -10,7 +10,9 @@ RUN go mod download
 RUN CGO_LDFLAGS="$CGO_LDFLAGS -lstdc++ -lm -lsodium" \
   CGO_ENABLED=1 \
   GOOS=linux \
-  go build -v -a --ldflags '-extldflags "-static" -v'
+  go build -v -a --ldflags '-extldflags "-static" -v' \
+  -o build/stargazer
+  
 
 
 FROM scratch
