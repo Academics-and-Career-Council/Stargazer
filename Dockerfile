@@ -1,6 +1,5 @@
 FROM golang:1.17.2-alpine AS builder
 RUN apk update && apk add --no-cache git build-base
-RUN apk 
 RUN apk add -U --no-cache ca-certificates && update-ca-certificates
 RUN apk add --no-cache zeromq-dev musl-dev pkgconfig alpine-sdk libsodium-dev libzmq-static libsodium-static
 RUN mkdir /stargazer
