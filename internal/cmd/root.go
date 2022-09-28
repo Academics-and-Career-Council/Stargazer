@@ -16,8 +16,8 @@ var (
 	userLicense string
 
 	rootCmd = &cobra.Command{
-		Use:   "xenon",
-		Short: "Xenon GraphQL Remote Authorizer, Academics and Career Council",
+		Use:   "stargazer",
+		Short: "Stargazer is logging service for all Microservices",
 	}
 )
 
@@ -25,12 +25,12 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/config.yml)")
-	rootCmd.PersistentFlags().StringP("author", "a", "Shivam Malhotra", "author name for copyright attribution")
+	rootCmd.PersistentFlags().StringP("author", "a", "Faheem Nizar", "author name for copyright attribution")
 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 	viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
 	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
-	viper.SetDefault("author", "Shivam Malhotra <mshivam@iitk.ac.in>")
+	viper.SetDefault("author", "Faheem Nizar <nfaheem@iitk.ac.in>")
 	viper.SetDefault("license", "MIT")
 }
 
