@@ -112,7 +112,7 @@ func BulkWrite(db *badger.DB) { //write to mongo from badgerDB
 
 	s := gocron.NewScheduler(time.UTC)
 	time.Sleep(20 * time.Second)
-	s.Every(1).Minute().Do(func() {
+	s.Every(1).Hour().Do(func() {
 		studList := GetFromBadger(db, batchID)               //returns all students in badger
 		MongoClient.BulkWriteInSyslog(studList, db, batchID) //writes everything to mongo finally
 		batchID = MongoClient.GetLastBatchID()               //updates the batchID
